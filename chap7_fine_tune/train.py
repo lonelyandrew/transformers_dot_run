@@ -50,7 +50,7 @@ def main() -> None:
     for epoch_idx in range(epoch_num):
         logger.info(f"Epoch {epoch_idx + 1}/{epoch_num}")
         total_loss: float = train_loop(
-            train_dataloader, model, loss_fn, optimizer, lr_scheduler, epoch_idx + 1, total_loss
+            train_dataloader, model, loss_fn, optimizer, lr_scheduler, epoch_idx + 1, total_loss, writer
         )
         valid_acc: float = test_loop(valid_dataloader, model, mode="Valid")
         if valid_acc > best_acc:
