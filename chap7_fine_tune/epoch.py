@@ -45,7 +45,7 @@ def train_loop(
     model.train()
     x: Tensor
     y: Tensor
-    for step, (x, y) in enumerate(dataloader, start=1):
+    for step_idx, (x, y) in enumerate(dataloader, start=1):
         x, y = x.to(device), y.to(device)
         prediction: Tensor = model(x)
         loss: Tensor = loss_fn(prediction, y)
@@ -56,9 +56,9 @@ def train_loop(
         lr_scheduler.step()
 
         total_loss += loss.item()
-        summary_writer.add_scalar("Loss/train", loss.item(), epoch_idx + 1)
-        avg_loss: float = total_loss / (finish_step_num + step)
-        summary_writer.add_scalar("Loss/train_avg", avg_loss, epoch_idx + 1)
+        summary_writer.add_scalar("Loss/train", loss.item(), step_idx + 1)
+        avg_loss: float = total_loss / (finish_step_num + step_idx)
+        summary_writer.add_scalar("Loss/train_avg", avg_loss, step_idx + 1)
         progress_bar.set_description(f"Loss: {avg_loss:>7f}")
         progress_bar.update(1)
     return total_loss
