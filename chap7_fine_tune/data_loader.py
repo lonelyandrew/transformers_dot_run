@@ -9,6 +9,7 @@ from chap7_fine_tune import checkpoint
 
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
+
 def collate_fn(batch_samples: Iterable[dict[str, str]]) -> tuple[BatchEncoding, Tensor]:
     """Batch处理函数.
 
@@ -31,13 +32,14 @@ def collate_fn(batch_samples: Iterable[dict[str, str]]) -> tuple[BatchEncoding, 
     return x, y
 
 
-def get_data_loader(dataset: Dataset) -> DataLoader:
+def get_data_loader(dataset: Dataset, shuffle: bool = False) -> DataLoader:
     """获取数据集的加载器.
 
     Args:
         dataset: 数据集.
+        shuffle: 是否随机打乱数据.
 
     Returns:
         返回一个DataLoader对象.
     """
-    return DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
+    return DataLoader(dataset, batch_size=4, shuffle=shuffle, collate_fn=collate_fn)

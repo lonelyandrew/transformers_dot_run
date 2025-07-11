@@ -19,7 +19,7 @@ seed_everything(42)
 def main() -> None:
     # 数据准备
     train_dataset: AFQMC = AFQMC("data/AFQMC/train.jsonl")
-    train_dataloader: DataLoader = get_data_loader(train_dataset)
+    train_dataloader: DataLoader = get_data_loader(train_dataset, shuffle=True)
     valid_dataset: AFQMC = AFQMC("data/AFQMC/dev.jsonl")
     valid_dataloader: DataLoader = get_data_loader(valid_dataset)
 
@@ -49,7 +49,7 @@ def main() -> None:
 
     for epoch_idx in range(epoch_num):
         logger.info(f"Epoch {epoch_idx + 1}/{epoch_num}")
-        total_loss: float = train_loop(
+        total_loss += train_loop(
             train_dataloader, model, loss_fn, optimizer, lr_scheduler, epoch_idx + 1, total_loss, writer
         )
         valid_acc: float = test_loop(valid_dataloader, model, mode="Valid")

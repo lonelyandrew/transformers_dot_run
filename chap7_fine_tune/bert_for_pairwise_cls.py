@@ -9,14 +9,14 @@ class BertForPairwiseCLS(BertPreTrainedModel):
 
     def __init__(self, config: BertConfig) -> None:
         super().__init__(config)
-        self.encoder: BertModel = BertModel(config, add_pooling_layer=False)
+        self.bert_encoder: BertModel = BertModel(config, add_pooling_layer=False)
         self.dropout: Dropout = Dropout(config.hidden_dropout_prob)
         self.classifier: Linear = Linear(768, 2)
         self.post_init()
 
     def forward(self, x: BatchEncoding) -> Tensor:
-        bert_output: BaseModelOutputWithPoolingAndCrossAttentions = self.encoder(**x)
-        cls_vectors: Tensor = bert_output.last_hidden_state[:, 0, :]
+        bert_outputs: BaseModelOutputWithPoolingAndCrossAttentions = self.bert_encoder(**x)
+        cls_vectors: Tensor = bert_outputs.last_hidden_state[:, 0, :]
         cls_vectors: Tensor = self.dropout(cls_vectors)
         logits: Tensor = self.classifier(cls_vectors)
         return logits
