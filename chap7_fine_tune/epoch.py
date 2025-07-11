@@ -56,9 +56,10 @@ def train_loop(
         lr_scheduler.step()
 
         total_loss += loss.item()
-        summary_writer.add_scalar("Loss/train", loss.item(), step_idx + 1)
-        avg_loss: float = total_loss / (finish_step_num + step_idx)
-        summary_writer.add_scalar("Loss/train_avg", avg_loss, step_idx + 1)
+        global_step_idx: int = finish_step_num + step_idx
+        summary_writer.add_scalar("Loss/train", loss.item(), global_step_idx)
+        avg_loss: float = total_loss / global_step_idx
+        summary_writer.add_scalar("Loss/train_avg", avg_loss, global_step_idx)
         progress_bar.set_description(f"Loss: {avg_loss:>7f}")
         progress_bar.update(1)
     return total_loss
