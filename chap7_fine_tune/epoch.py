@@ -5,6 +5,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
+from loguru import logger
 
 from chap7_fine_tune import device
 
@@ -22,7 +23,7 @@ def test_loop(dataloader, model, mode="Test") -> float:
             correct_cnt += (prediction.argmax(1) == y).type(torch.float).sum().item()
 
     acc: float = correct_cnt / size
-    print(f"{mode} Accuracy: {(100 * acc):>0.1f}%\n")
+    logger.info(f"{mode} Accuracy: {(100 * acc):>0.1f}%\n")
     return acc
 
 

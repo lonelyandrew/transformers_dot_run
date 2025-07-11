@@ -4,6 +4,7 @@ from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from transformers import AutoConfig, get_scheduler, BertConfig
+from loguru import logger
 
 from chap7_fine_tune import device, checkpoint
 from chap7_fine_tune.afqmc import AFQMC
@@ -39,19 +40,21 @@ def main() -> None:
 
     total_loss: float = 0.0
     best_acc: float = 0.0
+    valid_acc: float = test_loop(valid_dataloader, model, mode="Valid")
+    logger.info("起始Valid Acc: {:.5f}", valid_acc)
+
     for epoch_idx in range(epoch_num):
-        print("-" * 80)
-        print(f"Epoch {epoch_idx + 1}/{epoch_num}")
+        logger.info(f"Epoch {epoch_idx + 1}/{epoch_num}")
         total_loss: float = train_loop(
             train_dataloader, model, loss_fn, optimizer, lr_scheduler, epoch_idx + 1, total_loss
         )
         valid_acc: float = test_loop(valid_dataloader, model, mode="Valid")
         if valid_acc > best_acc:
             best_acc = valid_acc
-            print(f"Saving new weights, best acc: {best_acc}")
             filename: str = f"epoch_{epoch_num + 1}_valid_acc_{(100 * valid_acc):0.1f}_model_weights.bin"
+            logger.info(f"保存模型权重: {filename}, 当前最优ACC: {best_acc}")
             torch.save(model.state_dict(), filename)
-    print("Done!")
+    logger.info("训练完成.")
 
 
 if __name__ == "__main__":

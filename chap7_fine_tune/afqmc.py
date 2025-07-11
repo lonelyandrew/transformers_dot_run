@@ -1,5 +1,6 @@
 import jsonlines
 from torch.utils.data import Dataset
+from loguru import logger
 
 
 class AFQMC(Dataset):
@@ -14,7 +15,8 @@ class AFQMC(Dataset):
         Args:
             data_file: 数据集文件路径.
         """
-        self.data = self.load_data(data_file)
+        self.data: dict[int, dict[str, str]] = self.load_data(data_file)
+        logger.info("加载AFQMC数据集, 样本量{}条", len(self.data))
 
     def load_data(self, data_file: str) -> dict[int, dict[str, str]]:
         """加载数据集.
@@ -35,5 +37,5 @@ class AFQMC(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> dict[str, str]:
         return self.data[idx]
