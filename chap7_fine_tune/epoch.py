@@ -4,6 +4,7 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 from loguru import logger
 
@@ -35,6 +36,7 @@ def train_loop(
     lr_scheduler: LRScheduler,
     epoch_idx: int,
     total_loss: float,
+    summary_writer: SummaryWriter,
 ) -> float:
     progress_bar: tqdm = tqdm(range(len(dataloader)))
     progress_bar.set_description(f"loss: {0:>7f}")
@@ -54,6 +56,9 @@ def train_loop(
         lr_scheduler.step()
 
         total_loss += loss.item()
-        progress_bar.set_description(f"Loss: {total_loss / (finish_step_num + step):>7f}")
+        summary_writer.add_scalar("Loss/train", loss.item(), epoch_idx + 1)
+        avg_loss: float = total_loss / (finish_step_num + step)
+        summary_writer.add_scalar("Loss/train_avg", avg_loss, epoch_idx + 1)
+        progress_bar.set_description(f"Loss: {avg_loss:>7f}")
         progress_bar.update(1)
     return total_loss

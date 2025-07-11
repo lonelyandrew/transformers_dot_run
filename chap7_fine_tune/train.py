@@ -3,6 +3,7 @@ from torch.nn import CrossEntropyLoss, Module
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoConfig, get_scheduler, BertConfig
 from loguru import logger
 
@@ -40,8 +41,9 @@ def main() -> None:
 
     total_loss: float = 0.0
     best_acc: float = 0.0
-    valid_acc: float = test_loop(valid_dataloader, model, mode="Valid")
-    logger.info("起始Valid Acc: {:.5f}", valid_acc)
+    test_loop(valid_dataloader, model, mode="Valid")
+    writer: SummaryWriter = SummaryWriter()
+
 
     for epoch_idx in range(epoch_num):
         logger.info(f"Epoch {epoch_idx + 1}/{epoch_num}")
@@ -55,6 +57,7 @@ def main() -> None:
             logger.info(f"保存模型权重: {filename}, 当前最优ACC: {best_acc}")
             torch.save(model.state_dict(), filename)
     logger.info("训练完成.")
+    writer.close()
 
 
 if __name__ == "__main__":
