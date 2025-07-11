@@ -12,7 +12,9 @@ from chap7_fine_tune.afqmc import AFQMC
 from chap7_fine_tune.bert_for_pairwise_cls import BertForPairwiseCLS
 from chap7_fine_tune.data_loader import get_data_loader
 from chap7_fine_tune.epoch import train_loop, test_loop
+from utils.random import seed_everything
 
+seed_everything(42)
 
 def main() -> None:
     # 数据准备
