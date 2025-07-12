@@ -50,9 +50,9 @@ def test() -> None:
             probabilities = torch.nn.functional.softmax(pred, dim=-1)[0].cpu().numpy().tolist()
             predictions = pred.argmax(dim=-1)[0].cpu().numpy().tolist()
 
-            pred_label = []
+            pred_label: list[dict[str, str | float | int]] = []
             inputs_with_offsets = test_data.tokenizer(example["sentence"], return_offsets_mapping=True)
-            offsets = inputs_with_offsets["offset_mapping"]
+            offsets: list[tuple[int, int]] = inputs_with_offsets["offset_mapping"]
 
             idx = 0
             while idx < len(predictions):
@@ -84,3 +84,7 @@ def test() -> None:
         with open("test_data_pred.json", "wt", encoding="utf-8") as f:
             for exapmle_result in results:
                 f.write(json.dumps(exapmle_result, ensure_ascii=False) + "\n")
+
+
+if __name__ == "__main__":
+    test()
