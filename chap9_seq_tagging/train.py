@@ -29,7 +29,7 @@ def main() -> None:
     valid_dataloader: DataLoader = valid_data.as_dataloader(batch_size=4)
 
     config: PretrainedConfig = AutoConfig.from_pretrained(checkpoint)
-    model: BertForNER = BertForNER(config, label_num=len(train_data.id2label))
+    model = BertForNER.from_pretrained(checkpoint, config=config, label_num=len(train_data.id2label)).to(device)
     model.to(device)  # type: ignore
 
     loss_fn: CrossEntropyLoss = CrossEntropyLoss()
