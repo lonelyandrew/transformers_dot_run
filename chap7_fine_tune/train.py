@@ -10,7 +10,7 @@ from transformers.optimization import get_scheduler
 from loguru import logger
 
 from chap7_fine_tune import device, checkpoint
-from chap7_fine_tune.afqmc import AFQMC
+from dataset.afqmc import AFQMC
 from chap7_fine_tune.bert_for_pairwise_cls import BertForPairwiseCLS
 from chap7_fine_tune.epoch import train_loop, test_loop
 from utils.random import seed_everything

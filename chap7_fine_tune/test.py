@@ -4,7 +4,7 @@ from transformers import BertConfig
 from transformers.configuration_utils import PretrainedConfig
 
 from chap7_fine_tune import checkpoint, device
-from chap7_fine_tune.afqmc import AFQMC
+from dataset.afqmc import AFQMC
 from chap7_fine_tune.bert_for_pairwise_cls import BertForPairwiseCLS
 from chap7_fine_tune.epoch import test_loop
 
