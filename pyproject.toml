@@ -8,6 +8,7 @@ dependencies = [
     "hf-xet>=1.1.5",
     "jsonlines>=4.0.0",
     "loguru>=0.7.3",
+    "seqeval>=1.2.2",
     "torch>=2.7.1",
     "transformers>=4.53.1",
 ]
