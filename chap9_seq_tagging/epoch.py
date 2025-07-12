@@ -5,6 +5,7 @@ from tqdm import tqdm
 from torch import nn
 import torch
 from seqeval.metrics import classification_report
+from seqeval.scheme import IOB2
 from loguru import logger
 
 from chap9_seq_tagging import device
@@ -56,6 +57,6 @@ def test_loop(dataloader: DataLoader, model: BertForNER, id2label: dict[int, str
                 [id2label[int(p)] for (p, i) in zip(prediction, label) if i != -100]
                 for prediction, label in zip(predictions, labels)
             ]
-    metrics = classification_report(y_true, y_pred, mode="strict", scheme="IOB2", output_dict=True)
+    metrics = classification_report(y_true, y_pred, mode="strict", scheme=IOB2, output_dict=True)
     logger.info(metrics)
-    return metrics
+    return metrics  # type: ignore
