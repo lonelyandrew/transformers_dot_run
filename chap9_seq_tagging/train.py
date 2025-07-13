@@ -22,10 +22,10 @@ def main() -> None:
     learning_rate: float = 1e-5
     epoch_num: int = 3
 
-    train_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.train")
+    train_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.train", checkpoint)
     train_dataloader: DataLoader = train_data.as_dataloader(batch_size=4, shuffle=True)
 
-    valid_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.dev")
+    valid_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.dev", checkpoint)
     valid_dataloader: DataLoader = valid_data.as_dataloader(batch_size=4)
 
     config: PretrainedConfig = AutoConfig.from_pretrained(checkpoint)

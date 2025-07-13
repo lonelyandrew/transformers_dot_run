@@ -14,7 +14,7 @@ def main() -> None:
     model: BertForPairwiseCLS = BertForPairwiseCLS.from_pretrained(checkpoint, config=config)
     model.to(device)  # type: ignore
 
-    valid_dataset: AFQMC = AFQMC("data/AFQMC/dev.jsonl")
+    valid_dataset: AFQMC = AFQMC("data/AFQMC/dev.jsonl", checkpoint)
     valid_dataloader: DataLoader = valid_dataset.as_dataloader(batch_size=4)
 
     model.load_state_dict(torch.load("epoch_3_valid_acc_74.1_model_weights.bin"))

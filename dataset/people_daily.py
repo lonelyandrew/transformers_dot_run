@@ -1,39 +1,38 @@
-from typing import Any
+from typing import Any, Iterable, override
 
 from transformers.tokenization_utils_base import BatchEncoding
 
 import numpy as np
 import torch
 from torch import Tensor
-from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, BertTokenizer
 from loguru import logger
 
-from chap9_seq_tagging import checkpoint
+from dataset.dataset_base import DatasetBase
 
 
-class PeopleDaily(Dataset):
+class PeopleDaily(DatasetBase):
     """1998 年人民日报语料库."""
 
-    def __init__(self, data_file: str) -> None:
+    def __init__(self, data_file: str, checkpoint: str) -> None:
         """初始化数据集.
 
         Args:
             data_file: 数据文件路径.
+            checkpoint: 模型checkpoint名称.
         """
-        self.tokenizer: BertTokenizer = AutoTokenizer.from_pretrained(checkpoint)
         self.categories: set[str] = set()
-        self.data: dict[int, dict[str, Any]] = self.load_data(data_file)
-        self.id2label = {0: "O"}
+        super().__init__(data_file, checkpoint)
+        self.id2label: dict[int, str] = {0: "O"}
         for category in list(sorted(self.categories)):
             self.id2label[len(self.id2label)] = f"B-{category}"
             self.id2label[len(self.id2label)] = f"I-{category}"
-        self.label2id = {v: k for k, v in self.id2label.items()}
+        self.label2id: dict[str, int] = {v: k for k, v in self.id2label.items()}
         logger.info("加载人民日报语料库, 样本量{}条, 标签: {}", len(self.data), self.categories)
         logger.info("标签到id的映射: {}", self.id2label)
         logger.info("id到标签的映射: {}", self.label2id)
 
-    def load_data(self, data_file) -> dict[int, dict[str, Any]]:
+    @override
+    def load_data(self, data_file: str) -> dict[int, dict[str, Any]]:
         data: dict[int, dict[str, Any]] = {}
 
         with open(data_file, encoding="utf-8") as f:
@@ -58,13 +57,8 @@ class PeopleDaily(Dataset):
                 data[sentence_idx] = {"sentence": sentence, "labels": labels}
         return data
 
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
-
-    def collote_fn(self, batch_samples) -> tuple[BatchEncoding, Tensor]:
+    @override
+    def collate_fn(self, batch_samples: Iterable[dict[str, Any]]) -> tuple[BatchEncoding, Tensor]:
         batch_sentence: list[str] = []
         batch_tags: list[list[Any]] = []
 
@@ -93,6 +87,3 @@ class PeopleDaily(Dataset):
                 batch_label[s_idx][token_start] = self.label2id[f"B-{tag}"]
                 batch_label[s_idx][token_start + 1 : token_end + 1] = self.label2id[f"I-{tag}"]
         return batch_inputs, torch.tensor(batch_label)
-
-    def as_dataloader(self, batch_size: int, shuffle: bool = False) -> DataLoader:
-        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, collate_fn=self.collote_fn)

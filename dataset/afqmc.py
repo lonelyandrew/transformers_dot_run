@@ -1,31 +1,31 @@
-from typing import Iterable
+from typing import Iterable, override
+
 import jsonlines
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer, BertTokenizer
 from transformers.tokenization_utils_base import BatchEncoding
 from loguru import logger
 
-from chap7_fine_tune import checkpoint
+from dataset.dataset_base import DatasetBase
 
 
-class AFQMC(Dataset):
+class AFQMC(DatasetBase):
     """AFQMC数据集.
 
     AFQMC (Ant Financial Question Matching Corpus) ：蚂蚁金融语义相似度数据集，该数据集由蚂蚁金服提供。
     """
 
-    def __init__(self, data_file: str) -> None:
+    def __init__(self, data_file: str, checkpoint: str) -> None:
         """初始化数据集.
 
         Args:
             data_file: 数据集文件路径.
+            checkpoint: 模型checkpoint名称.
         """
-        self.data: dict[int, dict[str, str]] = self.load_data(data_file)
-        self.tokenizer: BertTokenizer = AutoTokenizer.from_pretrained(checkpoint)
+        super().__init__(data_file, checkpoint)
         logger.info("加载AFQMC数据集, 样本量{}条", len(self.data))
 
+    @override
     def load_data(self, data_file: str) -> dict[int, dict[str, str]]:
         """加载数据集.
 
@@ -42,12 +42,7 @@ class AFQMC(Dataset):
                 data[idx] = dict(sample)
         return data
 
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx) -> dict[str, str]:
-        return self.data[idx]
-
+    @override
     def collate_fn(self, batch_samples: Iterable[dict[str, str]]) -> tuple[BatchEncoding, Tensor]:
         """Batch处理函数.
 
@@ -70,6 +65,3 @@ class AFQMC(Dataset):
         )
         y: Tensor = torch.tensor(batch_label)
         return x, y
-
-    def as_dataloader(self, batch_size: int, shuffle: bool = False) -> DataLoader:
-        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, collate_fn=self.collate_fn)

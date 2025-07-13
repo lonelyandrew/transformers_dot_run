@@ -15,7 +15,7 @@ from dataset.people_daily import PeopleDaily
 
 
 def test() -> None:
-    test_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.test")
+    test_data: PeopleDaily = PeopleDaily("data/china-people-daily-ner-corpus/example.test", checkpoint)
     test_dataloader: DataLoader = test_data.as_dataloader(batch_size=4)
 
     config: PretrainedConfig = AutoConfig.from_pretrained(checkpoint)

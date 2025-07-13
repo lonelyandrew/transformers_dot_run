@@ -20,9 +20,9 @@ seed_everything(42)
 
 def main() -> None:
     # 数据准备
-    train_dataset: AFQMC = AFQMC("data/AFQMC/train.jsonl")
+    train_dataset: AFQMC = AFQMC("data/AFQMC/train.jsonl", checkpoint)
     train_dataloader: DataLoader = train_dataset.as_dataloader(batch_size=4, shuffle=True)
-    valid_dataset: AFQMC = AFQMC("data/AFQMC/dev.jsonl")
+    valid_dataset: AFQMC = AFQMC("data/AFQMC/dev.jsonl", checkpoint)
     valid_dataloader: DataLoader = valid_dataset.as_dataloader(batch_size=4)
 
     # 创建模型
