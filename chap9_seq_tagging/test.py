@@ -52,7 +52,7 @@ def test() -> None:
 
             pred_label: list[dict[str, str | float | int]] = []
             inputs_with_offsets = test_data.tokenizer(example["sentence"], return_offsets_mapping=True)
-            offsets: list[tuple[int, int]] = inputs_with_offsets["offset_mapping"]
+            offsets: list[tuple[int, int]] = inputs_with_offsets["offset_mapping"]  # type: ignore
 
             idx = 0
             while idx < len(predictions):
@@ -61,10 +61,10 @@ def test() -> None:
                 if label != "O":
                     label = label[2:]  # Remove the B- or I-
                     start, end = offsets[idx]
-                    all_scores: list[float] = [probabilities[idx][pred]]
+                    all_scores: list[float] = [probabilities[idx][pred]]  # type: ignore
                     # Grab all the tokens labeled with I-label
                     while idx + 1 < len(predictions) and test_data.id2label[predictions[idx + 1]] == f"I-{label}":
-                        all_scores.append(probabilities[idx + 1][predictions[idx + 1]])
+                        all_scores.append(probabilities[idx + 1][predictions[idx + 1]])  # type: ignore
                         _, end = offsets[idx + 1]
                         idx += 1
 
