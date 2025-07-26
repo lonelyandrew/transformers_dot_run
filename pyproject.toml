@@ -6,12 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "hf-xet>=1.1.5",
-    "jsonlines>=4.0.0",
     "loguru>=0.7.3",
-    "sacrebleu>=2.5.1",
-    "sacremoses>=0.1.1",
-    "sentencepiece>=0.2.0",
-    "seqeval>=1.2.2",
     "torch>=2.7.1",
     "transformers>=4.53.1",
 ]
@@ -30,3 +25,16 @@ dev = [
 [tool.ruff]
 # Allow lines to be as long as 120.
 line-length = 120
+
+
+[project.optional-dependencies]
+chap9 = [
+    "seqeval>=1.2.2",
+]
+
+chap10 = [
+    "jsonlines>=4.0.0",
+    "sacrebleu>=2.5.1",
+    "sacremoses>=0.1.1",
+    "sentencepiece>=0.2.0",
+]
