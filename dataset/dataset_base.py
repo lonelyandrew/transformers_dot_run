@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, BertTokenizer
@@ -67,6 +67,7 @@ class DatasetBase(Dataset, ABC):
         shuffle: bool = False,
         num_workers: int = 0,
         pin_memory: bool = False,
+        collate_fn_args: Optional[dict[str, Any]] = None,
     ) -> DataLoader:
         """将数据集转换为DataLoader.
 
@@ -83,7 +84,7 @@ class DatasetBase(Dataset, ABC):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
-            collate_fn=self.collate_fn,
+            collate_fn=lambda x: self.collate_fn(x, **(collate_fn_args or {})),
             num_workers=num_workers,
             pin_memory=pin_memory,
         )
