@@ -26,7 +26,13 @@ class AFQMC(DatasetBase):
         logger.info("加载AFQMC数据集, 样本量{}条", len(self.data))
 
     @override
-    def load_data(self, data_file: str) -> dict[int, dict[str, str]]:
+    def load_data(
+        self,
+        data_file: str,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        shuffle: bool = True,
+    ) -> dict[int, dict[str, str]]:
         """加载数据集.
 
         Args:

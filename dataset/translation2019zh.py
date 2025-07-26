@@ -1,71 +1,79 @@
-from typing import Any, Iterable, Optional
+from typing import Any, Optional, override
 
 import jsonlines
-import torch
-from transformers import AutoModelForSeq2SeqLM
 from dataset.dataset_base import DatasetBase
+from datasets import Dataset
+from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers.tokenization_utils_base import BatchEncoding
 
 
 class Translation2019ZH(DatasetBase):
     """翻译2019中文数据集."""
 
-    def __init__(self, data_file_path: str, checkpoint: str, nrows: Optional[int] = None) -> None:
-        """初始化数据集.
-
-        Args:
-            data_file_path: 数据集文件路径.
-            checkpoint: 模型checkpoint名称.
-            nrows: 加载数据集行数.
-        """
-        self.nrows: Optional[int] = nrows
-        super().__init__(data_file_path, checkpoint)
-
-    def load_data(self, data_file_path: str) -> dict[int, dict[str, Any]]:
+    @override
+    @classmethod
+    def load(
+        cls,
+        data_file_path: str,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> Dataset:
         """加载数据集.
 
         Args:
             data_file_path: 数据集文件路径.
+            limit: 加载数据集行数.
+            offset: 偏移量.
 
         Returns:
-            返回一个字典，key为样本索引，value为样本数据字典.
+            返回一个数据集实例.
         """
-        result_dict: dict[int, dict[str, Any]] = {}
+        if offset is None:
+            offset = 0
+        data_list: list[dict[str, Any]] = []
         with jsonlines.open(data_file_path) as reader:
             for idx, data in enumerate(reader):
-                if self.nrows and idx >= self.nrows:
+                if limit and len(data_list) >= limit:
                     break
-                result_dict[idx] = data
-        return result_dict
+                if offset and idx < offset:
+                    continue
+                data_list.append(data)
 
-    def collate_fn(
-        self,
-        batch_samples: Iterable[dict[str, Any]],
-        model: AutoModelForSeq2SeqLM,
-        max_length: int = 128,
-    ) -> Any:
-        """批量处理函数.
+        return Dataset.from_list(data_list)
+
+    @classmethod
+    def encode(cls, examples: dict[str, Any], tokenizer: PreTrainedTokenizer, max_length: int) -> BatchEncoding:
+        model_inputs: BatchEncoding = tokenizer(
+            examples["chinese"], max_length=max_length, truncation=True, padding=False
+        )
+
+        with tokenizer.as_target_tokenizer():
+            labels = tokenizer(examples["english"], max_length=max_length, truncation=True, padding=False)
+
+        model_inputs["labels"] = labels["input_ids"]
+        return model_inputs
+
+    @override
+    @classmethod
+    def tokenize(cls, dataset: Dataset, tokenizer: PreTrainedTokenizer, max_length: int) -> Dataset:
+        """分词数据集.
 
         Args:
-            batch_samples: 批量样本列表
-            max_length: 最大长度
-            model: 模型
+            dataset: 数据集.
+            tokenizer: 分词器.
+            max_length: 最大长度.
+
         Returns:
-            处理后的批量数据，通常是模型输入和标签的元组
+            返回一个数据集实例.
         """
-        batch_inputs, batch_targets = [], []
-        for sample in batch_samples:
-            batch_inputs.append(sample["chinese"])
-            batch_targets.append(sample["english"])
-        batch_data = self.tokenizer(
-            batch_inputs,
-            text_target=batch_targets,
-            padding=True,
-            max_length=max_length,
-            truncation=True,
-            return_tensors="pt",
-        )
-        batch_data["decoder_input_ids"] = model.prepare_decoder_input_ids_from_labels(batch_data["labels"])
-        end_token_index = torch.where(batch_data["labels"] == self.tokenizer.eos_token_id)[1]
-        for idx, end_idx in enumerate(end_token_index):
-            batch_data["labels"][idx][end_idx + 1 :] = -100
-        return batch_data
+        return dataset.map(cls.encode, batched=True, fn_kwargs={"tokenizer": tokenizer, "max_length": max_length})
+
+
+if __name__ == "__main__":
+    from transformers import AutoTokenizer
+
+    model_checkpoint = "Helsinki-NLP/opus-mt-zh-en"
+    tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
+    dataset: Dataset = Translation2019ZH.load("data/translation2019zh/train.jsonl", limit=10)
+    dataset = Translation2019ZH.tokenize(dataset, tokenizer, max_length=128)
+    print(dataset[0])

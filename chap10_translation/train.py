@@ -1,62 +1,71 @@
-import torch
-from transformers import AutoModelForSeq2SeqLM
-from torch.utils.data import DataLoader, random_split
-from torch.optim import AdamW
-from transformers.optimization import get_scheduler
-from chap10_translation import checkpoint
-from chap10_translation.epoch import test_loop, train_loop
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers.data.data_collator import DataCollatorForSeq2Seq
+from transformers.trainer import Trainer
+from transformers.training_args import TrainingArguments
+from datasets import Dataset
+from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers.modeling_utils import PreTrainedModel
+
 from dataset.translation2019zh import Translation2019ZH
+from utils.random import seed_everything
+from eval import compute_metrics
+
+seed_everything(42)
 
 
 def train() -> None:
-    learning_rate: float = 2e-5
-    epoch_num: int = 3
+    """训练主函数."""
+
+    # 定义超参数
     train_set_size: int = 200000
     valid_set_size: int = 2000
+    max_length: int = 128
+    batch_size: int = 32
 
-    dataset: Translation2019ZH = Translation2019ZH(
-        data_file_path="data/translation2019zh/train.jsonl",
-        checkpoint=checkpoint,
-        nrows=train_set_size + valid_set_size,
+    # 加载数据集
+    model_checkpoint: str = "Helsinki-NLP/opus-mt-zh-en"
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
+    train_dataset: Dataset = Translation2019ZH.load("data/translation2019zh/train.jsonl", limit=train_set_size)
+    valid_dataset: Dataset = Translation2019ZH.load(
+        "data/translation2019zh/valid.jsonl",
+        limit=valid_set_size,
+        offset=train_set_size,
     )
-    train_set, valid_set = random_split(
-        dataset,
-        [train_set_size, valid_set_size],
-    )
-    train_dataloader = DataLoader(
-        train_set,
-        batch_size=32,
-        shuffle=True,
-        collate_fn=lambda x: dataset.collate_fn(x, model, max_length=128),
-    )
-    valid_dataloader = DataLoader(
-        valid_set,
-        batch_size=32,
-        shuffle=True,
-        collate_fn=lambda x: dataset.collate_fn(x, model, max_length=128),
-    )
+    train_dataset = Translation2019ZH.tokenize(train_dataset, tokenizer, max_length=max_length)
+    valid_dataset = Translation2019ZH.tokenize(valid_dataset, tokenizer, max_length=max_length)
 
-    model: AutoModelForSeq2SeqLM = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
-    optimizer = AdamW(model.parameters(), lr=learning_rate)
-    lr_scheduler = get_scheduler(
-        "linear",
-        optimizer=optimizer,
-        num_warmup_steps=0,
-        num_training_steps=epoch_num * len(train_dataloader),
+    # 加载模型
+    model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint)
+
+    # 定义数据整理器
+    data_collator: DataCollatorForSeq2Seq = DataCollatorForSeq2Seq(
+        tokenizer=tokenizer, model=model, padding=True, label_pad_token_id=-100
     )
 
-    total_loss = 0.0
-    best_bleu = 0.0
-    for t in range(epoch_num):
-        print(f"Epoch {t + 1}/{epoch_num}\n-------------------------------")
-    total_loss = train_loop(train_dataloader, model, optimizer, lr_scheduler, t + 1, total_loss)
-    valid_bleu = test_loop(valid_dataloader, model, dataset.tokenizer, max_length=128, mode="Valid")
-    print(f"BLEU: {valid_bleu:>0.2f}\n")
-    if valid_bleu > best_bleu:
-        best_bleu = valid_bleu
-        print("saving new weights...\n")
-        torch.save(model.state_dict(), f"epoch_{t + 1}_valid_bleu_{valid_bleu:0.2f}_model_weights.bin")
-    print("Done!")
+    # 定义训练参数
+    training_args: TrainingArguments = TrainingArguments(
+        output_dir="./results",
+        eval_strategy="epoch",
+        save_strategy="best",
+        learning_rate=1e-5,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=3,
+        logging_steps=1000,
+    )
+
+    # 定义训练器
+    trainer: Trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=valid_dataset,
+        data_collator=data_collator,
+        compute_metrics=lambda eval_preds: compute_metrics(eval_preds, tokenizer),
+    )
+
+    # 训练模型
+    trainer.train()
 
 
 if __name__ == "__main__":
